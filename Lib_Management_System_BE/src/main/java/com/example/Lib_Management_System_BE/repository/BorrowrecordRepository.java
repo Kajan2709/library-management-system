@@ -24,4 +24,8 @@ public interface BorrowrecordRepository extends JpaRepository<Borrowrecord, Long
             Long studentId,
             Long bookId
     );
+
+    boolean existsByStudent_StudentIdAndReturnDateIsNull(
+            Long studentId
+    );
 }
