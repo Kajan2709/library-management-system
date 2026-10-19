@@ -6,6 +6,7 @@ import com.example.Lib_Management_System_BE.entities.Student;
 import com.example.Lib_Management_System_BE.enums.Gender;
 import com.example.Lib_Management_System_BE.exception.Bussinessexception;
 import com.example.Lib_Management_System_BE.mapper.StudentMapper;
+import com.example.Lib_Management_System_BE.repository.BorrowrecordRepository;
 import com.example.Lib_Management_System_BE.repository.StudentRepository;
 import com.example.Lib_Management_System_BE.service.StudentService;
 import jakarta.transaction.Transactional;
@@ -20,10 +21,12 @@ public class StudentServiceimpl implements StudentService {
 
     private final StudentMapper studentMapper;
     private final StudentRepository studentRepository;
+    private final BorrowrecordRepository borrowrecordRepository;
 
-    public StudentServiceimpl(StudentMapper studentMapper, StudentRepository studentRepository) {
+    public StudentServiceimpl(StudentMapper studentMapper, StudentRepository studentRepository, BorrowrecordRepository borrowrecordRepository) {
         this.studentMapper = studentMapper;
         this.studentRepository = studentRepository;
+        this.borrowrecordRepository = borrowrecordRepository;
     }
 
     @Override
@@ -76,17 +79,17 @@ public class StudentServiceimpl implements StudentService {
                 .orElseThrow(() ->
                         new Bussinessexception("Student not found!"));
 
-//        if(dto.getStudentName().isEmpty()){
-//            throw new Bussinessexception("Student name must required!");
-//        }
-//
-//        if (dto.getAge()<=0){
-//            throw  new Bussinessexception("Age must be greater than 0");
-//        }
-//
-//        if(dto.getCourse().isEmpty()){
-//            throw  new Bussinessexception("Course must required!");
-//        }
+        if(dto.getStudentName().isEmpty()){
+            throw new Bussinessexception("Student name must required!");
+        }
+
+        if (dto.getAge()<=0){
+            throw  new Bussinessexception("Age must be greater than 0");
+        }
+
+        if(dto.getCourse().isEmpty()){
+            throw  new Bussinessexception("Course must required!");
+        }
 
         student.setStudentName(dto.getStudentName());
         student.setAge(dto.getAge().intValue());
@@ -99,11 +102,22 @@ public class StudentServiceimpl implements StudentService {
     }
 
     @Override
+    @Transactional
     public void deleteStudent(Long id) {
 
         Student student = studentRepository.findById(id)
                 .orElseThrow(() ->
                         new Bussinessexception("Student not found!"));
+
+        boolean hasActiveBorrow =
+                borrowrecordRepository
+                        .existsByStudent_StudentIdAndReturnDateIsNull(id);
+
+        if (hasActiveBorrow) {
+            throw new Bussinessexception(
+                    "Cannot delete student. Active borrow records exist. Please return all borrowed books first."
+            );
+        }
 
         studentRepository.delete(student);
     }

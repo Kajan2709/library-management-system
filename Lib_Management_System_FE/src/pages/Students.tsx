@@ -85,19 +85,28 @@ export default function Students() {
     }
   };
 
-  const removeStudent = async () => {
-    if (!selected) return;
-    try {
-      setError("");
-      await studentsApi.remove(selected.studentId);
-      await load();
-      setModal(null);
-      setSuccess("Successfully deleted student record.");
-      setSelected(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Delete failed");
-    }
-  };
+ const removeStudent = async () => {
+  if (!selected) return;
+
+  try {
+    setError("");
+    setSuccess("");
+
+    await studentsApi.remove(selected.studentId);
+
+    await load();
+    setModal(null);
+    setSuccess("Successfully deleted student record.");
+    setSelected(null);
+
+  } catch (e) {
+    const message =
+      e instanceof Error ? e.message : "Delete failed";
+
+    setError(message);
+
+  }
+};
 
   const filterGender = async (value: "ALL" | Gender) => {
     setGender(value);
