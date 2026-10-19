@@ -1,0 +1,84 @@
+
+name: Library Frontend CI/CD
+
+on:
+  push:
+    branches: [DEV_MAIN]
+    paths:
+      - 'Lib_Management_System_FE/**'
+      - '.github/workflows/frontend-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: library-frontend-deploy
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./Lib_Management_System_FE
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: Lib_Management_System_FE/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build React frontend
+        run: npm run build
+
+      - name: Configure SSH
+        working-directory: .
+        env:
+          SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          HOST_KEY: ${{ secrets.VM_HOST_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$HOST_KEY" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload frontend build
+        working-directory: .
+        env:
+          HOST: ${{ secrets.VM_HOST }}
+          USER: ${{ secrets.VM_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$USER@$HOST" \
+            'mkdir -p /home/azureuser/Deployment/LibraryManagement/frontend-upload'
+
+          rsync -avz \
+            -e "ssh -i $HOME/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
+            Lib_Management_System_FE/dist/ \
+            "$USER@$HOST:/home/azureuser/Deployment/LibraryManagement/frontend-upload/"
+
+      - name: Deploy frontend
+        working-directory: .
+        env:
+          HOST: ${{ secrets.VM_HOST }}
+          USER: ${{ secrets.VM_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$USER@$HOST" \
+            'bash /home/azureuser/Deployment/LibraryManagement/scripts/deploy-frontend.sh'
