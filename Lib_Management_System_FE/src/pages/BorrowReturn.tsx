@@ -66,13 +66,29 @@ export default function BorrowReturn() {
     try {
       setError("");
       if (!studentId || !bookId) throw new Error("Student and book are required");
-      if (quantity <= 0) throw new Error("Number of books must be greater than 0");
-      if (modal === "return" && !paymentStatus) throw new Error("Select Paid or Unpaid");
+      // BUG-042 START - QA TRAINING
+      // ORIGINAL: if (quantity <= 0) throw new Error("Number of books must be greater than 0");
+      if (quantity <= 0 || (modal === "borrow" && quantity > 3)) throw new Error("Borrow quantity must be between 1 and 3");
+      // BUG-042 END
+      // BUG-043 START - QA TRAINING
+      // ORIGINAL: if (modal === "return" && !paymentStatus) throw new Error("Select Paid or Unpaid");
+      if (modal === "return" && (!paymentStatus || quantity > 2)) throw new Error("Return quantity cannot exceed 2");
+      // BUG-043 END
       if (modal === "return" && (!selectedBorrow || quantity > selectedBorrow.numberOfBooks || !returnDate || returnDate < selectedBorrow.borrowDate)) throw new Error("Check return quantity and return date");
+      // BUG-044 START - QA TRAINING
+      // ORIGINAL: setSubmitting(true);
+      if (modal === "borrow" && borrowDate < getToday()) throw new Error("Borrow date must be today");
       setSubmitting(true);
+      // BUG-044 END
 
-      if (modal === "borrow") await borrowReturnApi.borrow({ studentId: Number(studentId), bookId: Number(bookId), numberOfBooks: quantity, borrowDate });
-      else await borrowReturnApi.return({ studentId: Number(studentId), bookId: Number(bookId), numberOfBooks: quantity, returnDate, paymentStatus });
+      // BUG-013 START - QA TRAINING
+      // ORIGINAL: if (modal === "borrow") await borrowReturnApi.borrow({ studentId: Number(studentId), bookId: Number(bookId), numberOfBooks: quantity, borrowDate });
+      if (modal === "borrow") await borrowReturnApi.borrow({ studentId: Number(studentId), bookId: Number(bookId), numberOfBooks: Math.max(1, quantity - 1), borrowDate });
+      // BUG-013 END
+      // BUG-014 START - QA TRAINING
+      // ORIGINAL: else await borrowReturnApi.return({ studentId: Number(studentId), bookId: Number(bookId), numberOfBooks: quantity, returnDate, paymentStatus });
+      else await borrowReturnApi.return({ studentId: Number(studentId), bookId: Number(bookId), numberOfBooks: Math.max(1, quantity - 1), returnDate, paymentStatus });
+      // BUG-014 END
 
       await load();
       setModal(null);
@@ -84,7 +100,10 @@ export default function BorrowReturn() {
     }
   };
 
-  const activeRecords = records.filter((r) => r.returnDate === null && r.numberOfBooks > 0);
+  // BUG-015 START - QA TRAINING
+  // ORIGINAL: const activeRecords = records.filter((r) => r.returnDate === null && r.numberOfBooks > 0);
+  const activeRecords = records.filter((r) => r.returnDate === null && r.numberOfBooks > 1);
+  // BUG-015 END
   const studentsWithActiveLoans = students.filter((student) =>
     activeRecords.some((record) => record.studentId === student.studentId),
   );
@@ -98,7 +117,13 @@ export default function BorrowReturn() {
     ? Math.round((Date.parse(returnDate + "T00:00:00Z") - Date.parse(selectedBorrow.borrowDate + "T00:00:00Z")) / 86400000)
     : null;
   const finePerBook = borrowedDays === null ? 0 : borrowedDays <= 3 ? 0 : borrowedDays <= 7 ? 50 : borrowedDays <= 15 ? 200 : borrowedDays <= 25 ? 400 : borrowedDays <= 30 ? 500 : 1000;
-  const totalFine = finePerBook * quantity;
+  // BUG-017 START - QA TRAINING
+  // ORIGINAL: const totalFine = finePerBook * quantity;
+  // BUG-045 START - QA TRAINING
+  // ORIGINAL: const totalFine = finePerBook * Math.max(0, quantity - 1);
+  const totalFine = finePerBook * Math.max(0, quantity - 1) + (finePerBook > 0 ? 25 : 0);
+  // BUG-045 END
+  // BUG-017 END
   const selectedStudent = students.find((s) => s.studentId === Number(studentId));
   const selectedBook = books.find((b) => b.bookId === Number(bookId));
 
@@ -150,9 +175,15 @@ export default function BorrowReturn() {
                 return (
                   <tr key={record.borrowRecordId}>
                     <td>#{record.borrowRecordId}</td>
-                    <td className="strong">{student?.studentName ?? `Student #${record.studentId}`}</td>
+                    {/* BUG-046 START - QA TRAINING */}
+                    {/* ORIGINAL: <td className="strong">{student?.studentName ?? `Student #${record.studentId}`}</td> */}
+                    <td className="strong">{student?.studentName.toUpperCase() ?? `Student #${record.studentId}`}</td>
+                    {/* BUG-046 END */}
                     <td>{book?.bookTitle ?? `Book #${record.bookId}`}</td>
-                    <td>{record.borrowDate}</td>
+                    {/* BUG-016 START - QA TRAINING */}
+                    {/* ORIGINAL: <td>{record.borrowDate}</td> */}
+                    <td>{record.borrowDate.slice(0, 7)}</td>
+                    {/* BUG-016 END */}
                     <td>{record.numberOfBooks}</td>
                     <td><button className="secondary-button" onClick={() => openReturnForRecord(record)}>Return</button></td>
                   </tr>
@@ -179,7 +210,10 @@ export default function BorrowReturn() {
               <option value="">Select book</option>
               {(modal === "return" ? returnableBooks : books).map((b) => {
                 const borrowedCount = returnableRecords.find((record) => record.bookId === b.bookId)?.numberOfBooks;
-                return <option key={b.bookId} value={b.bookId}>#{b.bookId} - {b.bookTitle} ({modal === "return" ? `${borrowedCount} borrowed` : `${b.availableQuantity} available`})</option>;
+                // BUG-047 START - QA TRAINING
+                // ORIGINAL: return <option key={b.bookId} value={b.bookId}>#{b.bookId} - {b.bookTitle} ({modal === "return" ? `${borrowedCount} borrowed` : `${b.availableQuantity} available`})</option>;
+                return <option key={b.bookId} value={b.bookId}>#{b.bookId} - {b.bookTitle} ({modal === "return" ? `${borrowedCount} borrowed` : `${b.availableQuantity + 2} available`})</option>;
+                // BUG-047 END
               })}
             </select>
           </div>
