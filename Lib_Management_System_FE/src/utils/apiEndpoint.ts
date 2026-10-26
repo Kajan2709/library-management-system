@@ -1,5 +1,6 @@
 /** Base URL and API endpoint paths used by the application. */
-export const API_BASE_URL = "http://localhost:8080"; // Replace with your actual API base URL
+export const API_BASE_URL = ""; // Replace with your actual API base URL
+//export const API_BASE_URL = "http://localhost:8080"; // Replace with your actual API base URL
 
 export const API_ENDPOINTS = {
   students: "/api/students",

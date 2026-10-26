@@ -14,8 +14,15 @@ export const apiClient = {
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-    }
+  const errorData = await response.json().catch(() => null);
+
+  const errorMessage =
+    errorData?.message ||
+    errorData?.error ||
+    `API request failed: ${response.status}`;
+
+  throw new Error(errorMessage);
+}
 
     if (response.status === 204) return undefined as T;
     return response.json() as Promise<T>;
