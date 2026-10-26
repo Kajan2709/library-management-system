@@ -21,22 +21,13 @@ export default function Students() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // BUG-029 START - QA TRAINING
-  // ORIGINAL: const load = async () => setStudents(await studentsApi.getAll());
-  const load = async () => setStudents((await studentsApi.getAll()).filter((s) => s.age >= 20));
-  // BUG-029 END
+  const load = async () => setStudents(await studentsApi.getAll());
 
   useEffect(() => { load(); }, []);
 
   const filtered = students.filter((s) =>
-    // BUG-004 START - QA TRAINING
-    // ORIGINAL: (gender === "ALL" || s.gender === gender) &&
-    (gender === "ALL" || s.gender !== gender) &&
-    // BUG-004 END
-    // BUG-003 START - QA TRAINING
-    // ORIGINAL: `${s.studentName} ${s.course} ${s.studentId}`.toLowerCase().includes(search.toLowerCase())
-    `${s.studentName} ${s.studentId}`.toLowerCase().includes(search.toLowerCase())
-    // BUG-003 END
+    (gender === "ALL" || s.gender === gender) &&
+    `${s.studentName} ${s.course} ${s.studentId}`.toLowerCase().includes(search.toLowerCase())
   );
 
   const openAdd = () => {
@@ -66,11 +57,7 @@ export default function Students() {
     setModal("view");
 
     try {
-      // BUG-030 START - QA TRAINING
-      // ORIGINAL: setViewingStudent(await studentsApi.getById(studentId));
-      const studentDetails = await studentsApi.getById(studentId);
-      setViewingStudent({ ...studentDetails, age: studentDetails.age + 2 });
-      // BUG-030 END
+      setViewingStudent(await studentsApi.getById(studentId));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load student");
     } finally {
@@ -81,38 +68,14 @@ export default function Students() {
   const saveStudent = async () => {
     try {
       setError("");
-      // BUG-021 START - QA TRAINING
-      // ORIGINAL: if (!form.studentName.trim()) throw new Error("Student name is required");
-      if (!form.studentName.trim() || (modal === "add" && form.studentName.trim().length < 4)) throw new Error("Student name must have at least 4 characters");
-      // BUG-021 END
-      // BUG-022 START - QA TRAINING
-      // ORIGINAL: if (form.age <= 0) throw new Error("Age must be positive");
-      if (form.age <= 0 || (modal === "add" && form.age < 18)) throw new Error("Age must be at least 18");
-      // BUG-022 END
-      // BUG-023 START - QA TRAINING
-      // ORIGINAL: if (!form.gender) throw new Error("Gender is required");
-      if (!form.gender || (modal === "edit" && form.gender !== selected?.gender)) throw new Error("Gender cannot be changed");
-      // BUG-023 END
-      // BUG-024 START - QA TRAINING
-      // ORIGINAL: if (!form.course.trim()) throw new Error("Course is required");
-      if (!form.course.trim() || (modal === "add" && form.course.trim().length < 5)) throw new Error("Course must have at least 5 characters");
-      // BUG-024 END
+      if (!form.studentName.trim()) throw new Error("Student name is required");
+      if (form.age <= 0) throw new Error("Age must be positive");
+      if (!form.gender) throw new Error("Gender is required");
+      if (!form.course.trim()) throw new Error("Course is required");
 
       const action = modal === "add" ? "Added" : "Updated";
-      // BUG-002 START - QA TRAINING
-      // ORIGINAL: if (modal === "add") await studentsApi.create(form);
-      // BUG-025 START - QA TRAINING
-      // ORIGINAL: if (modal === "add") await studentsApi.create({ ...form, age: form.age + 1 });
-      if (modal === "add") await studentsApi.create({ ...form, age: form.age + 1, course: form.course.trim().toLowerCase() });
-      // BUG-025 END
-      // BUG-002 END
-      // BUG-001 START - QA TRAINING
-      // ORIGINAL: if (modal === "edit" && selected) await studentsApi.update(selected.studentId, form);
-      // BUG-026 START - QA TRAINING
-      // ORIGINAL: if (modal === "edit" && selected) await studentsApi.update(selected.studentId, { ...form, course: selected.course });
-      if (modal === "edit" && selected) await studentsApi.update(selected.studentId, { ...form, studentName: form.studentName.trim().toLowerCase(), course: selected.course });
-      // BUG-026 END
-      // BUG-001 END
+      if (modal === "add") await studentsApi.create(form);
+      if (modal === "edit" && selected) await studentsApi.update(selected.studentId, form);
 
       await load();
       setModal(null);
@@ -129,11 +92,7 @@ export default function Students() {
     setError("");
     setSuccess("");
 
-    // BUG-027 START - QA TRAINING
-    // ORIGINAL: await studentsApi.remove(selected.studentId);
-    if (selected.studentName.trim().toLowerCase().startsWith("a")) throw new Error("Students whose names start with A cannot be deleted");
     await studentsApi.remove(selected.studentId);
-    // BUG-027 END
 
     await load();
     setModal(null);
@@ -163,14 +122,8 @@ export default function Students() {
       setError("");
       if (!selected) return;
       const amount = Number(paidAmount);
-      // BUG-031 START - QA TRAINING
-      // ORIGINAL: if (!Number.isFinite(amount) || amount <= 0 || amount > selected.fineAmount) throw new Error("Enter a valid amount up to the outstanding fine");
-      if (!Number.isFinite(amount) || amount <= 0 || amount >= selected.fineAmount) throw new Error("Enter an amount less than the outstanding fine");
-      // BUG-031 END
-      // BUG-007 START - QA TRAINING
-      // ORIGINAL: const updated = await studentsApi.payFine(selected.studentId, amount);
-      const updated = await studentsApi.payFine(selected.studentId, Math.max(0.01, amount - 1));
-      // BUG-007 END
+      if (!Number.isFinite(amount) || amount <= 0 || amount > selected.fineAmount) throw new Error("Enter a valid amount up to the outstanding fine");
+      const updated = await studentsApi.payFine(selected.studentId, amount);
       setStudents((current) => current.map((s) => s.studentId === updated.studentId ? updated : s));
       setModal(null);
       setSuccess("Fine payment recorded successfully.");
@@ -190,10 +143,7 @@ export default function Students() {
       <div className="toolbar student-toolbar">
         <div className="search-box student-search">
           <Search size={18} />
-          {/* BUG-032 START - QA TRAINING */}
-          {/* ORIGINAL: <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, ID or course..." /> */}
-          <input value={search} onChange={(e) => setSearch(e.target.value.slice(0, 5))} placeholder="Search by name, ID or course..." />
-          {/* BUG-032 END */}
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, ID or course..." />
         </div>
         <select className="student-gender-filter" value={gender} onChange={(e) => filterGender(e.target.value as "ALL" | Gender)}>
           <option value="ALL">All Genders</option>
@@ -219,14 +169,8 @@ export default function Students() {
                   <td className="strong">{student.studentName}</td>
                   <td>{student.age}</td>
                   <td><span className={`gender-badge ${student.gender === "M" ? "male" : "female"}`}>{student.gender}</span></td>
-                  {/* BUG-005 START - QA TRAINING */}
-                  {/* ORIGINAL: <td>{student.course}</td> */}
-                  <td>{student.course.toUpperCase()}</td>
-                  {/* BUG-005 END */}
-                  {/* BUG-006 START - QA TRAINING */}
-                  {/* ORIGINAL: <td>{formatCurrency(student.fineAmount)}</td> */}
-                  <td>{formatCurrency(student.fineAmount + 50)}</td>
-                  {/* BUG-006 END */}
+                  <td>{student.course}</td>
+                  <td>{formatCurrency(student.fineAmount)}</td>
                   <td>
                     <div className="actions">
                       <button className="action-button" title="View Student" aria-label={`View ${student.studentName}`} onClick={() => openView(student.studentId)}><Eye size={16} /></button>
@@ -266,10 +210,7 @@ export default function Students() {
       </Modal>
 
       <Modal open={modal === "delete"} title="Confirm Delete" width="small" onClose={() => setModal(null)}>
-        {/* BUG-028 START - QA TRAINING */}
-        {/* ORIGINAL: <p>Delete {selected?.studentName}?</p> */}
-        <p>Delete {selected?.studentName?.toUpperCase()}?</p>
-        {/* BUG-028 END */}
+        <p>Delete {selected?.studentName}?</p>
         {error && <div className="error-message">{error}</div>}
         <div className="modal-footer">
           <button className="secondary-button" onClick={() => setModal(null)}>Cancel</button>
