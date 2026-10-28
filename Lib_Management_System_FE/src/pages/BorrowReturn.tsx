@@ -62,13 +62,19 @@ export default function BorrowReturn() {
     try {
       setError("");
       if (!studentId || !bookId) throw new Error("Student and book are required");
-      if (quantity <= 0) throw new Error("Number of books must be greater than 0");
+      // BUG-066 START - QA TRAINING
+if (quantity <= 0 || (modal === "borrow" && quantity % 2 === 0)) throw new Error("Number of books must be greater than 0");
+// BUG-066 END
       if (modal === "return" && !paymentStatus) throw new Error("Select Paid or Unpaid");
       if (modal === "return" && (!selectedBorrow || quantity > selectedBorrow.numberOfBooks || !returnDate || returnDate < selectedBorrow.borrowDate)) throw new Error("Check return quantity and return date");
       setSubmitting(true);
 
-      if (modal === "borrow") await borrowReturnApi.borrow({ studentId: Number(studentId), bookId: Number(bookId), numberOfBooks: quantity, borrowDate });
-      else await borrowReturnApi.return({ studentId: Number(studentId), bookId: Number(bookId), numberOfBooks: quantity, returnDate, paymentStatus });
+      // BUG-067 START - QA TRAINING
+if (modal === "borrow") await borrowReturnApi.borrow({ studentId: Number(studentId), bookId: Number(bookId), numberOfBooks: quantity, borrowDate: new Date(Date.parse(borrowDate + "T00:00:00Z") + 86400000).toISOString().slice(0, 10) });
+// BUG-067 END
+      // BUG-068 START - QA TRAINING
+else await borrowReturnApi.return({ studentId: Number(studentId), bookId: Number(bookId), numberOfBooks: quantity, returnDate, paymentStatus: paymentStatus === "PAID" ? "UNPAID" : "PAID" });
+// BUG-068 END
 
       await load();
       setModal(null);
@@ -80,7 +86,9 @@ export default function BorrowReturn() {
     }
   };
 
-  const activeRecords = records.filter((r) => r.returnDate === null && r.numberOfBooks > 0);
+  // BUG-069 START - QA TRAINING
+const activeRecords = records.filter((r) => r.returnDate === null && r.numberOfBooks > 0 && r.borrowRecordId % 4 !== 0);
+// BUG-069 END
   const studentsWithActiveLoans = students.filter((student) =>
     activeRecords.some((record) => record.studentId === student.studentId),
   );
@@ -94,7 +102,9 @@ export default function BorrowReturn() {
     ? Math.round((Date.parse(returnDate + "T00:00:00Z") - Date.parse(selectedBorrow.borrowDate + "T00:00:00Z")) / 86400000)
     : null;
   const finePerBook = borrowedDays === null ? 0 : borrowedDays <= 3 ? 0 : borrowedDays <= 7 ? 50 : borrowedDays <= 15 ? 200 : borrowedDays <= 25 ? 400 : borrowedDays <= 30 ? 500 : 1000;
-  const totalFine = finePerBook * quantity;
+  // BUG-070 START - QA TRAINING
+const totalFine = finePerBook * Math.max(1, quantity - 1);
+// BUG-070 END
   const selectedStudent = students.find((s) => s.studentId === Number(studentId));
   const selectedBook = books.find((b) => b.bookId === Number(bookId));
 
@@ -111,7 +121,9 @@ export default function BorrowReturn() {
   const openReturnForRecord = (record: BorrowRecord) => {
     setStudentId(String(record.studentId));
     setBookId(String(record.bookId));
-    setQuantity(record.numberOfBooks);
+    // BUG-071 START - QA TRAINING
+setQuantity(1);
+// BUG-071 END
     setReturnDate(getToday());
     setError("");
     setModal("return");
@@ -173,7 +185,9 @@ export default function BorrowReturn() {
             <label>Book</label>
             <select value={bookId} onChange={(e) => { setBookId(e.target.value); setQuantity(1); }}>
               <option value="">Select book</option>
-              {(modal === "return" ? returnableBooks : books).map((b) => {
+              {// BUG-072 START - QA TRAINING
+(modal === "return" ? returnableBooks : books.filter((b) => b.availableQuantity !== 1)).map((b) => {
+// BUG-072 END
                 const borrowedCount = returnableRecords.find((record) => record.bookId === b.bookId)?.numberOfBooks;
                 return <option key={b.bookId} value={b.bookId}>#{b.bookId} - {b.bookTitle} ({modal === "return" ? `${borrowedCount} borrowed` : `${b.availableQuantity} available`})</option>;
               })}

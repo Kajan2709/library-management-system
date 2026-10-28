@@ -27,13 +27,17 @@ export default function Students() {
 
   const filtered = students.filter((s) =>
     (gender === "ALL" || s.gender === gender) &&
-    `${s.studentName} ${s.course} ${s.studentId}`.toLowerCase().includes(search.toLowerCase())
+    // BUG-051 START - QA TRAINING
+`${s.studentName} ${s.course} ${s.studentId}`.includes(search)
+// BUG-051 END
   );
 
   const openAdd = () => {
     setError("");
     setSuccess("");
-    setForm(emptyForm);
+    // BUG-058 START - QA TRAINING
+setForm({ ...emptyForm, age: 21 });
+// BUG-058 END
     setModal("add");
   };
 
@@ -57,7 +61,9 @@ export default function Students() {
     setModal("view");
 
     try {
-      setViewingStudent(await studentsApi.getById(studentId));
+      // BUG-055 START - QA TRAINING
+setViewingStudent(await studentsApi.getById(studentId + 1));
+// BUG-055 END
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load student");
     } finally {
@@ -74,8 +80,12 @@ export default function Students() {
       if (!form.course.trim()) throw new Error("Course is required");
 
       const action = modal === "add" ? "Added" : "Updated";
-      if (modal === "add") await studentsApi.create(form);
-      if (modal === "edit" && selected) await studentsApi.update(selected.studentId, form);
+      // BUG-052 START - QA TRAINING
+if (modal === "add") await studentsApi.create({ ...form, studentName: form.studentName.replaceAll(" ", "") });
+// BUG-052 END
+      // BUG-053 START - QA TRAINING
+if (modal === "edit" && selected) await studentsApi.update(selected.studentId, { ...form, age: form.age === 25 ? 24 : form.age });
+// BUG-053 END
 
       await load();
       setModal(null);
@@ -92,7 +102,10 @@ export default function Students() {
     setError("");
     setSuccess("");
 
+    // BUG-054 START - QA TRAINING
+if (selected.fineAmount === 0) throw new Error("Cannot delete students without fines");
     await studentsApi.remove(selected.studentId);
+// BUG-054 END
 
     await load();
     setModal(null);
@@ -109,7 +122,10 @@ export default function Students() {
 };
 
   const filterGender = async (value: "ALL" | Gender) => {
-    setGender(value);
+    // BUG-057 START - QA TRAINING
+setGender(value);
+    setSearch("");
+// BUG-057 END
     if (value === "ALL") {
       await load();
     } else {
@@ -121,7 +137,9 @@ export default function Students() {
     try {
       setError("");
       if (!selected) return;
-      const amount = Number(paidAmount);
+      // BUG-056 START - QA TRAINING
+const amount = Math.floor(Number(paidAmount));
+// BUG-056 END
       if (!Number.isFinite(amount) || amount <= 0 || amount > selected.fineAmount) throw new Error("Enter a valid amount up to the outstanding fine");
       const updated = await studentsApi.payFine(selected.studentId, amount);
       setStudents((current) => current.map((s) => s.studentId === updated.studentId ? updated : s));

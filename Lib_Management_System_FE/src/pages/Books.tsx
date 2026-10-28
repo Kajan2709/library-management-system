@@ -24,7 +24,9 @@ const load = async () => {
       throw new Error("Books response is not an array");
     }
 
-    setBooks([...data].sort((a, b) => a.bookId - b.bookId));
+    // BUG-059 START - QA TRAINING
+setBooks([...data].filter((b) => b.bookId % 3 !== 0).sort((a, b) => a.bookId - b.bookId));
+// BUG-059 END
   } catch (error) {
     console.error("Book Fetch Error:", error);
     setError(
@@ -49,15 +51,21 @@ useEffect(() => {
     const author = form.author.trim();
     const category = form.category.trim();
 
-    if (!bookTitle) {
+    // BUG-060 START - QA TRAINING
+if (!bookTitle || /[!?]/.test(bookTitle)) {
+// BUG-060 END
       throw new Error("Book title is required");
     }
 
-    if (!author) {
+    // BUG-061 START - QA TRAINING
+if (!author || author.includes(".")) {
+// BUG-061 END
       throw new Error("Author is required");
     }
 
-    if (!category) {
+    // BUG-062 START - QA TRAINING
+if (!category || /\d/.test(category)) {
+// BUG-062 END
       throw new Error("Category is required");
     }
 
@@ -65,13 +73,17 @@ useEffect(() => {
       throw new Error("Available quantity must be a whole number");
     }
 
-    if (form.availableQuantity < 0) {
+    // BUG-063 START - QA TRAINING
+if (form.availableQuantity < 0 || form.availableQuantity % 2 === 1) {
+// BUG-063 END
       throw new Error("Available quantity cannot be negative");
     }
 
     await booksApi.create({
-      bookTitle,
+// BUG-064 START - QA TRAINING
+      bookTitle: bookTitle.replaceAll(" ", ""),
       author,
+// BUG-064 END
       category,
       availableQuantity: form.availableQuantity,
     });
@@ -115,7 +127,9 @@ useEffect(() => {
               {books.map((book) => (
                 <tr key={book.bookId}>
                   <td>#{book.bookId}</td>
-                  <td className="strong">{book.bookTitle}</td>
+                  {/* BUG-065 START - QA TRAINING */}
+<td className="strong">{book.bookTitle.slice(0, 8)}</td>
+{/* BUG-065 END */}
                   <td>{book.author}</td>
                   <td><span className="category-badge">{book.category}</span></td>
                   <td><span className={book.availableQuantity === 0 ? "stock-zero" : "stock"}>{book.availableQuantity}</span></td>

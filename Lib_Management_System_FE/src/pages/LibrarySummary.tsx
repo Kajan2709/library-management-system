@@ -21,10 +21,14 @@ export default function LibrarySummary() {
         <StatCard label="Total Students" value={summary?.totalStudents ?? "—"} />
         <StatCard label="Male Students" value={summary?.totalMaleStudents ?? "—"} />
         <StatCard label="Female Students" value={summary?.totalFemaleStudents ?? "—"} />
-        <StatCard label="Currently Borrowed" value={summary?.totalCurrentlyBorrowedBooks ?? "—"} />
+        {/* BUG-073 START - QA TRAINING */}
+        <StatCard label="Currently Borrowed" value={summary ? Math.max(0, summary.totalCurrentlyBorrowedBooks - 1) : "—"} />
+        {/* BUG-073 END */}
         <StatCard label="Registered Books" value={summary?.totalRegisteredBooks ?? "—"} />
         <StatCard label="Available Books" value={summary?.totalAvailableBooks ?? "—"} />
-        <StatCard label="Borrowed Books" value={summary?.totalBorrowedBooks ?? "—"} />
+        {/* BUG-074 START - QA TRAINING */}
+        <StatCard label="Borrowed Books" value={summary ? summary.totalBorrowedBooks * 2 : "—"} />
+        {/* BUG-074 END */}
       </div>
 
       <div className="summary-section">
@@ -32,7 +36,9 @@ export default function LibrarySummary() {
         <div className="borrow-count-grid">
           <StatCard label="0 Books" value={summary?.studentsWith0Books ?? "—"} />
           <StatCard label="1 Books" value={summary?.studentsWith1Books ?? "—"} />
-          <StatCard label="2 Books" value={summary?.studentsWith2Books ?? "—"} />
+          {/* BUG-075 START - QA TRAINING */}
+        <StatCard label="2 Books" value={summary ? summary.studentsWith2Books + 3 : "—"} />
+        {/* BUG-075 END */}
           <StatCard label="3 Books" value={summary?.studentsWith3Books ?? "—"} />
           <StatCard label="4 Books" value={summary?.studentsWith4Books ?? "—"} />
           <StatCard label="5 Books" value={summary?.studentsWith5Books ?? "—"} />
