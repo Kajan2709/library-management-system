@@ -24,10 +24,7 @@ const load = async () => {
       throw new Error("Books response is not an array");
     }
 
-    // BUG-011 START - QA TRAINING
-    // ORIGINAL: setBooks([...data].sort((a, b) => a.bookId - b.bookId));
-    setBooks([...data].sort((a, b) => b.bookId - a.bookId));
-    // BUG-011 END
+    setBooks([...data].sort((a, b) => a.bookId - b.bookId));
   } catch (error) {
     console.error("Book Fetch Error:", error);
     setError(
@@ -52,58 +49,31 @@ useEffect(() => {
     const author = form.author.trim();
     const category = form.category.trim();
 
-    // BUG-033 START - QA TRAINING
-    // ORIGINAL: if (!bookTitle) {
-    if (!bookTitle || bookTitle.length < 5) {
-    // BUG-033 END
+    if (!bookTitle) {
       throw new Error("Book title is required");
     }
 
-    // BUG-034 START - QA TRAINING
-    // ORIGINAL: if (!author) {
-    if (!author || author.length < 4) {
-    // BUG-034 END
+    if (!author) {
       throw new Error("Author is required");
     }
 
-    // BUG-035 START - QA TRAINING
-    // ORIGINAL: if (!category) {
-    if (!category || category.length < 4) {
-    // BUG-035 END
+    if (!category) {
       throw new Error("Category is required");
     }
 
-    // BUG-036 START - QA TRAINING
-    // ORIGINAL: if (!Number.isInteger(form.availableQuantity)) {
-    if (!Number.isInteger(form.availableQuantity) || form.availableQuantity > 10) {
-    // BUG-036 END
+    if (!Number.isInteger(form.availableQuantity)) {
       throw new Error("Available quantity must be a whole number");
     }
 
-    // BUG-037 START - QA TRAINING
-    // ORIGINAL: if (form.availableQuantity < 0) {
-    if (form.availableQuantity <= 0) {
-    // BUG-037 END
+    if (form.availableQuantity < 0) {
       throw new Error("Available quantity cannot be negative");
     }
 
     await booksApi.create({
-      // BUG-009 START - QA TRAINING
-      // ORIGINAL: bookTitle,
-      bookTitle: bookTitle.toUpperCase(),
-      // BUG-009 END
-      // BUG-010 START - QA TRAINING
-      // ORIGINAL: author,
-      author: author.toUpperCase(),
-      // BUG-010 END
-      // BUG-038 START - QA TRAINING
-      // ORIGINAL: category,
-      category: category.toUpperCase(),
-      // BUG-038 END
-      // BUG-008 START - QA TRAINING
-      // ORIGINAL: availableQuantity: form.availableQuantity,
-      availableQuantity: Math.max(1, form.availableQuantity - 1),
-      // BUG-008 END
+      bookTitle,
+      author,
+      category,
+      availableQuantity: form.availableQuantity,
     });
 
     await load();
@@ -142,27 +112,15 @@ useEffect(() => {
           <table>
             <thead><tr><th>ID</th><th>Book Title</th><th>Author</th><th>Category</th><th>Available Quantity</th></tr></thead>
             <tbody>
-              {/* BUG-039 START - QA TRAINING */}
-              {/* ORIGINAL: {books.map((book) => ( */}
-              {books.filter((book) => book.availableQuantity > 0).map((book) => (
+              {books.map((book) => (
                 <tr key={book.bookId}>
                   <td>#{book.bookId}</td>
                   <td className="strong">{book.bookTitle}</td>
-                  {/* BUG-040 START - QA TRAINING */}
-                  {/* ORIGINAL: <td>{book.author}</td> */}
-                  <td>{book.author.slice(0, 4)}</td>
-                  {/* BUG-040 END */}
-                  {/* BUG-012 START - QA TRAINING */}
-                  {/* ORIGINAL: <td><span className="category-badge">{book.category}</span></td> */}
-                  <td><span className="category-badge">{book.category.toLowerCase()}</span></td>
-                  {/* BUG-012 END */}
-                  {/* BUG-041 START - QA TRAINING */}
-                  {/* ORIGINAL: <td><span className={book.availableQuantity === 0 ? "stock-zero" : "stock"}>{book.availableQuantity}</span></td> */}
-                  <td><span className={book.availableQuantity === 0 ? "stock-zero" : "stock"}>{book.availableQuantity + 1}</span></td>
-                  {/* BUG-041 END */}
+                  <td>{book.author}</td>
+                  <td><span className="category-badge">{book.category}</span></td>
+                  <td><span className={book.availableQuantity === 0 ? "stock-zero" : "stock"}>{book.availableQuantity}</span></td>
                 </tr>
               ))}
-              {/* BUG-039 END */}
             </tbody>
           </table>
         </div>
