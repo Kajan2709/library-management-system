@@ -9,7 +9,7 @@ export default function LibrarySummary() {
 
   useEffect(() => {
     librarySummaryApi.get().then(setSummary).catch(() => {
-      // Keep the summary layout visible while the backend is unavailable.
+      
     });
   }, []);
 

@@ -24,10 +24,6 @@ export default function BorrowReturn() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // const load = async () => {
-  //   const [s, b, r] = await Promise.all([borrowReturnApi.getStudents(), borrowReturnApi.getBooks(), borrowReturnApi.getRecords()]);
-  //   setStudents(s); setBooks(b); setRecords(r);
-  // };
 
   const load = async () => {
   const results = await Promise.allSettled([
